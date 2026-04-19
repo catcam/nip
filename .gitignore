@@ -3,3 +3,8 @@ build/
 *.app/
 *.zip
 *.iconset/
+**/bin/
+**/obj/
+
+!dist/
+!dist/NetworkIPs.exe
