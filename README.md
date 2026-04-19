@@ -45,7 +45,7 @@ Windows portable `.exe`:
 ```bash
 export DOTNET_ROOT=/opt/homebrew/opt/dotnet/libexec
 export PATH=$DOTNET_ROOT:$PATH
-dotnet publish NetworkIPs.Windows/NetworkIPs.Windows.csproj -c Release -r win-x64 --self-contained true /p:PublishSingleFile=true /p:IncludeNativeLibrariesForSelfExtract=true
+dotnet publish NetworkIPs.Windows/NetworkIPs.Windows.csproj -c Release -r win-x64 --self-contained true /p:PublishSingleFile=true /p:IncludeNativeLibrariesForSelfExtract=true /p:PublishTrimmed=true /p:TrimMode=partial /p:DebugType=None /p:DebugSymbols=false
 cp NetworkIPs.Windows/bin/Release/net10.0/win-x64/publish/NetworkIPs.Windows.exe dist/NetworkIPs.exe
 ```
 
@@ -55,6 +55,7 @@ cp NetworkIPs.Windows/bin/Release/net10.0/win-x64/publish/NetworkIPs.Windows.exe
 - Tailscale detection prefers the `tailscale` CLI when present and falls back to interface scanning.
 - Traceroute runs through `/usr/sbin/traceroute`.
 - The Windows build uses `tracert`.
+- The committed Windows `.exe` is the trimmed portable build to keep size down.
 
 ## License
 
