@@ -1,6 +1,8 @@
 using System;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Avalonia.Controls;
@@ -105,12 +107,14 @@ public partial class MainWindow : Window
         SetText(_tracerouteText, $"Running tracert to {host}...");
         StopTraceroute();
 
+        var tracertPath = Path.Combine(Environment.SystemDirectory, "tracert.exe");
+
         var process = new Process
         {
             StartInfo = new ProcessStartInfo
             {
-                FileName = "cmd.exe",
-                Arguments = $"/c tracert -d -h 12 {host}",
+                FileName = File.Exists(tracertPath) ? tracertPath : "tracert",
+                Arguments = $"-d -h 12 -w 1000 {host}",
                 UseShellExecute = false,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
@@ -145,24 +149,39 @@ public partial class MainWindow : Window
             }
         });
 
-        var stdoutTask = process.StandardOutput.ReadToEndAsync(token);
-        var stderrTask = process.StandardError.ReadToEndAsync(token);
+        var output = new StringBuilder();
+
+        while (true)
+        {
+            var line = await process.StandardOutput.ReadLineAsync(token);
+            if (line is null)
+            {
+                break;
+            }
+
+            AppendTracerouteLine(output, line);
+        }
 
         await process.WaitForExitAsync(token);
-        var stdout = await stdoutTask;
-        var stderr = await stderrTask;
+        var stderr = (await process.StandardError.ReadToEndAsync(token)).Trim();
 
         _tracerouteProcess = null;
 
-        var output = string.Join(
-            Environment.NewLine,
-            new[] { stdout.Trim(), stderr.Trim() }.Where(value => !string.IsNullOrWhiteSpace(value))
-        );
+        if (!string.IsNullOrWhiteSpace(stderr))
+        {
+            AppendTracerouteLine(output, stderr);
+        }
 
         SetText(
             _tracerouteText,
-            string.IsNullOrWhiteSpace(output) ? "Traceroute returned no output." : output
+            output.Length == 0 ? "Traceroute returned no output." : output.ToString().TrimEnd()
         );
+    }
+
+    private void AppendTracerouteLine(StringBuilder output, string line)
+    {
+        output.AppendLine(line);
+        SetText(_tracerouteText, output.ToString().TrimEnd());
     }
 
     private void CancelRefresh()
@@ -213,7 +232,7 @@ public partial class MainWindow : Window
         if (target is not null)
         {
             target.Text = value;
-            target.CaretIndex = 0;
+            target.CaretIndex = value.Length;
         }
     }
 
