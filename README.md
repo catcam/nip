@@ -39,3 +39,7 @@ swiftc ExternalIPApp/IconGenerator.swift -o /tmp/IconGenerator -framework AppKit
 - The app uses `https://api.ipify.org?format=json` for the public IP lookup.
 - Tailscale detection prefers the `tailscale` CLI when present and falls back to interface scanning.
 - Traceroute runs through `/usr/sbin/traceroute`.
+
+## License
+
+MIT
