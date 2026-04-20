@@ -15,12 +15,17 @@ Linux portable build included:
 
 - `dist/NetworkIPs-linux`
 
+macOS/Linux CLI included:
+
+- `cli/network-ips`
+
 ## Files
 
 - `ExternalIPApp/main.swift` - app source
 - `ExternalIPApp/Info.plist` - bundle metadata
 - `ExternalIPApp/IconGenerator.swift` - generates the Art Deco app icon
 - `NetworkIPs.Windows/` - Avalonia desktop app source
+- `cli/network-ips` - portable Bash CLI for macOS/Linux
 - `dist/NetworkIPs.exe` - portable Windows executable
 - `dist/NetworkIPs-linux` - portable Linux executable
 
@@ -63,11 +68,20 @@ dotnet publish NetworkIPs.Windows/NetworkIPs.Windows.csproj -c Release -r linux-
 cp NetworkIPs.Windows/bin/Release/net10.0/linux-x64/publish/NetworkIPs.Windows dist/NetworkIPs-linux
 ```
 
+macOS/Linux CLI:
+
+```bash
+./cli/network-ips
+./cli/network-ips --no-trace
+./cli/network-ips --json
+```
+
 ## Notes
 
 - The app uses `https://api.ipify.org` for the public IP lookup.
 - Tailscale detection prefers the `tailscale` CLI when present and falls back to interface scanning.
 - Traceroute uses the native command for each OS.
+- The CLI runs on macOS and Linux without a build step.
 - The committed Windows `.exe` is the trimmed portable build to keep size down.
 
 ## License
