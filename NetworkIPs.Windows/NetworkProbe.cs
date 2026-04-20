@@ -189,8 +189,14 @@ internal static class NetworkProbe
             return new TailscaleInfo("Detected via interface scan", scannedAddresses);
         }
 
-        if (File.Exists(@"C:\Program Files\Tailscale\Tailscale IPN.exe")
-            || File.Exists(@"C:\Program Files (x86)\Tailscale\Tailscale IPN.exe"))
+        if (OperatingSystem.IsWindows()
+            && (File.Exists(@"C:\Program Files\Tailscale\Tailscale IPN.exe")
+                || File.Exists(@"C:\Program Files (x86)\Tailscale\Tailscale IPN.exe")))
+        {
+            return new TailscaleInfo("Install found, no active Tailscale IP", Array.Empty<string>());
+        }
+
+        if (OperatingSystem.IsMacOS() && File.Exists("/Applications/Tailscale.app"))
         {
             return new TailscaleInfo("Install found, no active Tailscale IP", Array.Empty<string>());
         }
@@ -210,11 +216,17 @@ internal static class NetworkProbe
 
     private static async Task<string?> FindTailscaleCLIAsync(CancellationToken cancellationToken)
     {
-        string[] candidates =
-        {
-            @"C:\Program Files\Tailscale\tailscale.exe",
-            @"C:\Program Files (x86)\Tailscale\tailscale.exe"
-        };
+        string[] candidates = OperatingSystem.IsWindows()
+            ? [
+                @"C:\Program Files\Tailscale\tailscale.exe",
+                @"C:\Program Files (x86)\Tailscale\tailscale.exe"
+            ]
+            : [
+                "/usr/bin/tailscale",
+                "/usr/local/bin/tailscale",
+                "/opt/homebrew/bin/tailscale",
+                "/opt/local/bin/tailscale"
+            ];
 
         foreach (var candidate in candidates)
         {
@@ -224,7 +236,11 @@ internal static class NetworkProbe
             }
         }
 
-        var output = await TryRunProcessAsync("where", "tailscale", cancellationToken);
+        var output = await TryRunProcessAsync(
+            OperatingSystem.IsWindows() ? "where" : "which",
+            "tailscale",
+            cancellationToken
+        );
         var firstLine = output?
             .Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries)
             .FirstOrDefault();

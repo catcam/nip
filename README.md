@@ -11,13 +11,18 @@ Windows portable build included:
 
 - `dist/NetworkIPs.exe`
 
+Linux portable build included:
+
+- `dist/NetworkIPs-linux`
+
 ## Files
 
 - `ExternalIPApp/main.swift` - app source
 - `ExternalIPApp/Info.plist` - bundle metadata
 - `ExternalIPApp/IconGenerator.swift` - generates the Art Deco app icon
-- `NetworkIPs.Windows/` - Avalonia Windows app source
+- `NetworkIPs.Windows/` - Avalonia desktop app source
 - `dist/NetworkIPs.exe` - portable Windows executable
+- `dist/NetworkIPs-linux` - portable Linux executable
 
 ## Build
 
@@ -49,12 +54,20 @@ dotnet publish NetworkIPs.Windows/NetworkIPs.Windows.csproj -c Release -r win-x6
 cp NetworkIPs.Windows/bin/Release/net10.0/win-x64/publish/NetworkIPs.Windows.exe dist/NetworkIPs.exe
 ```
 
+Linux portable binary:
+
+```bash
+export DOTNET_ROOT=/opt/homebrew/opt/dotnet/libexec
+export PATH=$DOTNET_ROOT:$PATH
+dotnet publish NetworkIPs.Windows/NetworkIPs.Windows.csproj -c Release -r linux-x64 --self-contained true /p:PublishSingleFile=true /p:IncludeNativeLibrariesForSelfExtract=true /p:PublishTrimmed=true /p:TrimMode=partial /p:DebugType=None /p:DebugSymbols=false
+cp NetworkIPs.Windows/bin/Release/net10.0/linux-x64/publish/NetworkIPs.Windows dist/NetworkIPs-linux
+```
+
 ## Notes
 
-- The app uses `https://api.ipify.org?format=json` for the public IP lookup.
+- The app uses `https://api.ipify.org` for the public IP lookup.
 - Tailscale detection prefers the `tailscale` CLI when present and falls back to interface scanning.
-- Traceroute runs through `/usr/sbin/traceroute`.
-- The Windows build uses `tracert`.
+- Traceroute uses the native command for each OS.
 - The committed Windows `.exe` is the trimmed portable build to keep size down.
 
 ## License

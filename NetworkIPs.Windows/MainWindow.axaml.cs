@@ -104,17 +104,22 @@ public partial class MainWindow : Window
 
     private async Task RunTracerouteAsync(string host, CancellationToken token)
     {
-        SetText(_tracerouteText, $"Running tracert to {host}...");
+        SetText(_tracerouteText, $"Running traceroute to {host}...");
         StopTraceroute();
 
-        var tracertPath = Path.Combine(Environment.SystemDirectory, "tracert.exe");
+        var command = GetTracerouteCommand(host);
+        if (command is null)
+        {
+            SetText(_tracerouteText, "Could not find a traceroute command on this system.");
+            return;
+        }
 
         var process = new Process
         {
             StartInfo = new ProcessStartInfo
             {
-                FileName = File.Exists(tracertPath) ? tracertPath : "tracert",
-                Arguments = $"-d -h 12 -w 1000 {host}",
+                FileName = command.Value.FileName,
+                Arguments = command.Value.Arguments,
                 UseShellExecute = false,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
@@ -131,7 +136,7 @@ public partial class MainWindow : Window
         catch (Exception)
         {
             _tracerouteProcess = null;
-            SetText(_tracerouteText, "Could not start tracert.");
+            SetText(_tracerouteText, "Could not start traceroute.");
             return;
         }
 
@@ -176,6 +181,56 @@ public partial class MainWindow : Window
             _tracerouteText,
             output.Length == 0 ? "Traceroute returned no output." : output.ToString().TrimEnd()
         );
+    }
+
+    private static (string FileName, string Arguments)? GetTracerouteCommand(string host)
+    {
+        if (OperatingSystem.IsWindows())
+        {
+            var tracertPath = Path.Combine(Environment.SystemDirectory, "tracert.exe");
+            return (
+                File.Exists(tracertPath) ? tracertPath : "tracert",
+                $"-d -h 12 -w 1000 {host}"
+            );
+        }
+
+        if (OperatingSystem.IsMacOS())
+        {
+            const string macTraceroute = "/usr/sbin/traceroute";
+            return File.Exists(macTraceroute)
+                ? (macTraceroute, $"-m 12 -q 1 -w 1 {host}")
+                : ("/usr/bin/traceroute", $"-m 12 -q 1 -w 1 {host}");
+        }
+
+        string[] tracerouteCandidates =
+        {
+            "/usr/bin/traceroute",
+            "/bin/traceroute",
+            "/usr/sbin/traceroute",
+            "/sbin/traceroute"
+        };
+
+        var traceroute = tracerouteCandidates.FirstOrDefault(File.Exists);
+        if (!string.IsNullOrWhiteSpace(traceroute))
+        {
+            return (traceroute, $"-n -m 12 -q 1 -w 1 {host}");
+        }
+
+        string[] tracepathCandidates =
+        {
+            "/usr/bin/tracepath",
+            "/bin/tracepath",
+            "/usr/sbin/tracepath",
+            "/sbin/tracepath"
+        };
+
+        var tracepath = tracepathCandidates.FirstOrDefault(File.Exists);
+        if (!string.IsNullOrWhiteSpace(tracepath))
+        {
+            return (tracepath, $"-n {host}");
+        }
+
+        return null;
     }
 
     private void AppendTracerouteLine(StringBuilder output, string line)
